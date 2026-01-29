@@ -14,7 +14,8 @@ import {
   Copy,
   Check,
 } from 'lucide-react'
-import { chrome } from 'some-chrome-module'; // Declare chrome variable
+
+declare const chrome: typeof globalThis.chrome
 
 interface TabInfo {
   title: string
