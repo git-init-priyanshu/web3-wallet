@@ -1,45 +1,37 @@
-import type { Metadata } from 'next'
-import { Geist, Geist_Mono } from 'next/font/google'
-import { Analytics } from '@vercel/analytics/next'
-import './globals.css'
+import type { Metadata } from "next";
+import { Geist, Geist_Mono } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
+import "./globals.css";
 
 const _geist = Geist({ subsets: ["latin"] });
 const _geistMono = Geist_Mono({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: 'v0 App',
-  description: 'Created with v0',
-  generator: 'v0.app',
+  title: "PB wallet",
+  description: "Created by Priyanshu Bartwal",
   icons: {
-    icon: [
-      {
-        url: '/icon-light-32x32.png',
-        media: '(prefers-color-scheme: light)',
-      },
-      {
-        url: '/icon-dark-32x32.png',
-        media: '(prefers-color-scheme: dark)',
-      },
-      {
-        url: '/icon.svg',
-        type: 'image/svg+xml',
-      },
-    ],
-    apple: '/apple-icon.png',
+    icon: [],
   },
-}
+};
 
 export default function RootLayout({
   children,
 }: Readonly<{
-  children: React.ReactNode
+  children: React.ReactNode;
 }>) {
   return (
     <html lang="en">
       <body className={`font-sans antialiased`}>
-        {children}
+        <main className="min-h-screen bg-[#09090b] flex items-center justify-center p-8">
+          <div className="relative">
+            <div className="absolute -inset-8 bg-violet-500/10 rounded-3xl blur-3xl" />
+            <div className="w-[360px] h-[600px] bg-[#09090b] text-[#fafafa] flex flex-col rounded-xl shadow-2xl border border-[#27272a] overflow-hidden relative">
+              {children}
+            </div>
+          </div>
+        </main>
         <Analytics />
       </body>
     </html>
-  )
+  );
 }
