@@ -6,10 +6,16 @@ import { Keypair } from "@solana/web3.js";
 import ApiManager from "@/api/getWalletBalance";
 
 const getBalance = async (publicKey: string) => {
-  const response = await ApiManager.getWalletBalance(publicKey);
-  const balance = response.data.result.value * 10 ** -9;
+  const balanceResponse = await ApiManager.getWalletBalance(publicKey);
+  const balance = balanceResponse.data.result.value * 10 ** -9;
 
-  return balance;
+  const usdPriceResponse = await ApiManager.getSolPriceUSD();
+  console.log(usdPriceResponse);
+  const usdPrice =
+    usdPriceResponse.data["So11111111111111111111111111111111111111112"]
+      .usdPrice;
+
+  return [balance, usdPrice];
 };
 
 const generateMasterSeed = (phrase?: string) => {
@@ -17,9 +23,8 @@ const generateMasterSeed = (phrase?: string) => {
   return mnemonicToSeedSync(mnemonic);
 };
 
-const generateWalletSeed = (seed: Buffer<ArrayBufferLike>) => {
-  const i = 0;
-  const path = `m/44'/501'/${i}'/0'`;
+const generateWalletSeed = (seed: Buffer<ArrayBufferLike>, index) => {
+  const path = `m/44'/501'/${index}'/0'`;
 
   const derivedSeed = derivePath(path, seed.toString("hex")).key;
   const secret = nacl.sign.keyPair.fromSeed(derivedSeed).secretKey;
@@ -30,24 +35,50 @@ const generateWalletSeed = (seed: Buffer<ArrayBufferLike>) => {
 };
 
 export const generateWallet = async () => {
+  const prevWalletData = JSON.parse(
+    localStorage.getItem("wallet-data") || "[]",
+  );
   const masterSeed = generateMasterSeed();
-  const { publicKey, privateKey } = generateWalletSeed(masterSeed);
-  const balance = await getBalance(publicKey);
+  const { publicKey, privateKey } = generateWalletSeed(
+    masterSeed,
+    prevWalletData.length + 1,
+  );
+  const [balance, usdPrice] = await getBalance(publicKey);
+  const newWallet = {
+    publicKey,
+    privateKey,
+    balance,
+    usdPrice,
+    index: prevWalletData.length + 1,
+  };
 
-  const walletData = JSON.parse(localStorage.getItem("wallet-data") || "[]");
-  const newData = [...walletData, { publicKey, privateKey, balance }];
+  const newData = [...prevWalletData, newWallet];
   localStorage.setItem("wallet-data", JSON.stringify(newData));
+  localStorage.setItem("selected-wallet", JSON.stringify(newWallet));
 };
 
 export const importWallet = async (phrase: string) => {
   if (!validateMnemonic(phrase)) {
     return;
   }
+  const prevWalletData = JSON.parse(
+    localStorage.getItem("wallet-data") || "[]",
+  );
   const masterSeed = generateMasterSeed(phrase);
-  const { publicKey, privateKey } = generateWalletSeed(masterSeed);
-  const balance = await getBalance(publicKey);
+  const { publicKey, privateKey } = generateWalletSeed(
+    masterSeed,
+    prevWalletData.length + 1,
+  );
+  const [balance, usdPrice] = await getBalance(publicKey);
+  const newWallet = {
+    publicKey,
+    privateKey,
+    balance,
+    usdPrice,
+    index: prevWalletData.length + 1,
+  };
 
-  const walletData = JSON.parse(localStorage.getItem("wallet-data") || "[]");
-  const newData = [...walletData, { publicKey, privateKey, balance }];
+  const newData = [...prevWalletData, newWallet];
   localStorage.setItem("wallet-data", JSON.stringify(newData));
+  localStorage.setItem("selected-wallet", JSON.stringify(newWallet));
 };

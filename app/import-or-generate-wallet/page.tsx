@@ -2,28 +2,24 @@
 
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import {
-  ArrowLeft,
-  ClipboardPaste,
-  Copy,
-  Download,
-  Plus,
-  SkipBack,
-} from "lucide-react";
+import { ArrowLeft, Copy, Download, Plus } from "lucide-react";
 import { useState } from "react";
 import { generateWallet, importWallet } from "./web3Functions";
 import { useRouter } from "next/navigation";
 import solanaIcon from "../../public/images.jpeg";
 import Image from "next/image";
 
+// endless olive castle pear west sphere cluster couch pepper someone lumber add
 export default function FirstTimePage() {
   const router = useRouter();
 
   const [isImportBtnClicked, setIsImportBtnClicked] = useState(false);
-  const [recoveryPhrase, setRecoveryPhrase] = useState("");
+  const [recoveryPhrase, setRecoveryPhrase] = useState<string[]>(
+    Array(12).fill(""),
+  );
 
   const importWalletFunc = async () => {
-    await importWallet(recoveryPhrase);
+    await importWallet(recoveryPhrase.join(" "));
     router.push("/home");
   };
   const generateWalletFunc = async () => {
@@ -39,10 +35,22 @@ export default function FirstTimePage() {
     }
   };
 
-  const onPasteBtnClick = async ()=>{
-    const phrase = await navigator.clipboard.readText();
-    console.log(phrase)
-  }
+  const onPasteBtnClick = async () => {
+    const phrase = (await navigator.clipboard.readText()) || "";
+    const phraseArray = phrase.split(" ");
+    if (phraseArray.length !== 12) {
+      console.log("Error");
+    } else {
+      setRecoveryPhrase(phraseArray);
+    }
+  };
+
+  const onInputValueChange = (i: number, text: string) => {
+    const phraseArray = [...recoveryPhrase];
+    phraseArray[i] = text;
+
+    setRecoveryPhrase(phraseArray);
+  };
   return (
     <div>
       <ArrowLeft
@@ -85,27 +93,30 @@ export default function FirstTimePage() {
           <div className="flex flex-col gap-4 w-full">
             <span className="text-center text-gray-200">Import Wallet</span>
             <div className="w-full font-medium">
-              <Button className="bg-blue-500/20 text-blue-500 cursor-pointer hover:bg-blue-500/10" onClick={onPasteBtnClick}>
+              <Button
+                className="bg-blue-500/20 text-blue-500 cursor-pointer hover:bg-blue-500/10"
+                onClick={onPasteBtnClick}
+              >
                 <Copy />
                 Paste
               </Button>
             </div>
             <div className="grid grid-cols-3 gap-2">
-              {Array(12)
-                .fill(null)
-                .map((_, i) => {
-                  return (
-                    <Input
-                      className="outline-0 border border-neutral-800"
-                      placeholder={`${i + 1}`}
-                      onChange={(e) => setRecoveryPhrase(e.target.value)}
-                    />
-                  );
-                })}
+              {recoveryPhrase.map((text, i) => {
+                return (
+                  <Input
+                    key={i}
+                    className="outline-0 border border-neutral-800"
+                    value={text}
+                    placeholder={`${i + 1}`}
+                    onChange={(e) => onInputValueChange(i, e.target.value)}
+                  />
+                );
+              })}
             </div>
             <Button
               className="cursor-pointer hover:bg-neutral-800"
-              disabled={!recoveryPhrase}
+              disabled={recoveryPhrase.findIndex((text) => text === "") !== -1}
               onClick={importWalletFunc}
             >
               <Plus />
