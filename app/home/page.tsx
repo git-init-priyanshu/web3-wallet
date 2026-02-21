@@ -163,15 +163,24 @@ export default function Page() {
 
       {/* Footer */}
       <footer className="absolute bottom-0 w-full flex items-center justify-around px-4 py-3 border-t border-[#27272a] bg-[#09090b]">
-        <button className="flex flex-col items-center gap-1 p-2 rounded-lg text-white">
+        <button
+          className="flex flex-col items-center gap-1 p-2 rounded-lg text-white cursor-pointer"
+          onClick={() => router.push("/send")}
+        >
           <Wallet className="w-5 h-5" />
           <span className="text-[10px] font-medium">Wallet</span>
         </button>
-        <button className="flex flex-col items-center gap-1 p-2 rounded-lg text-[#71717a] hover:text-[#a1a1aa] transition-colors">
+        <button
+          className="flex flex-col items-center gap-1 p-2 rounded-lg text-[#71717a] hover:text-[#a1a1aa] transition-colors cursor-pointer"
+          onClick={() => router.push("/send")}
+        >
           <ArrowUpRight className="w-5 h-5" />
           <span className="text-[10px] font-medium">Send</span>
         </button>
-        <button className="flex flex-col items-center gap-1 p-2 rounded-lg text-[#71717a] hover:text-[#a1a1aa] transition-colors">
+        <button
+          className="flex flex-col items-center gap-1 p-2 rounded-lg text-[#71717a] hover:text-[#a1a1aa] transition-colors cursor-pointer"
+          onClick={() => router.push("/swap")}
+        >
           <ArrowRightLeft className="w-5 h-5" />
           <span className="text-[10px] font-medium">Swap</span>
         </button>
