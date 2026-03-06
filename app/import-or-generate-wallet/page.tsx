@@ -1,130 +1,62 @@
 "use client";
 
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { ArrowLeft, Copy, Download, Plus } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { useState } from "react";
-import { generateWallet, importWallet } from "./web3Functions";
-import { useRouter } from "next/navigation";
-import solanaIcon from "../../public/images.jpeg";
-import Image from "next/image";
+import RecoveryPhrase from "./-recovery-phrase";
+import ImportPrivateKey from "./-private-key";
+import Home from "./-home";
+
+export type Page = "home" | "recovery-phrase" | "private-key";
 
 // endless olive castle pear west sphere cluster couch pepper someone lumber add
 export default function FirstTimePage() {
-  const router = useRouter();
-
-  const [isImportBtnClicked, setIsImportBtnClicked] = useState(false);
-  const [recoveryPhrase, setRecoveryPhrase] = useState<string[]>(
-    Array(12).fill(""),
-  );
-
-  const importWalletFunc = async () => {
-    await importWallet(recoveryPhrase.join(" "));
-    router.push("/home");
-  };
-  const generateWalletFunc = async () => {
-    await generateWallet();
-    router.push("/home");
-  };
+  const [page, setPage] = useState<Page>("home");
 
   const onBackButtonClick = () => {
-    if (isImportBtnClicked) {
-      setIsImportBtnClicked(false);
+    if (page !== "home") {
+      setPage("home");
     } else {
       history.back();
     }
   };
 
-  const onPasteBtnClick = async () => {
-    const phrase = (await navigator.clipboard.readText()) || "";
-    const phraseArray = phrase.split(" ");
-    if (phraseArray.length !== 12) {
-      console.log("Error");
-    } else {
-      setRecoveryPhrase(phraseArray);
-    }
-  };
-
-  const onInputValueChange = (i: number, text: string) => {
-    const phraseArray = [...recoveryPhrase];
-    phraseArray[i] = text;
-
-    setRecoveryPhrase(phraseArray);
-  };
-  return (
-    <div>
-      <ArrowLeft
-        className="w-8 mt-4 ml-4 text-neutral-500 cursor-pointer"
-        onClick={onBackButtonClick}
-      />
-      <div className="w-full flex flex-col items-center">
-        <div className="size-18 flex items-center justify-center bg-neutral-800 rounded-full">
-          <Image
-            src={solanaIcon}
-            alt="solana-icon"
-            className="size-10 rounded-full"
+  switch (page) {
+    case "recovery-phrase":
+      return (
+        <div>
+          <ArrowLeft
+            className="w-8 mt-4 ml-4 text-neutral-500 cursor-pointer"
+            onClick={onBackButtonClick}
           />
+          <div className="m-4">
+            <RecoveryPhrase />
+          </div>
         </div>
-        <span className="font-medium mt-4 text-xl text-gray-500">
-          Add Solana Wallet
-        </span>
-      </div>
-      <div className="flex m-4 mt-10 justify-center h-full">
-        {!isImportBtnClicked ? (
-          <div className="flex flex-col gap-4">
-            <Button
-              className="cursor-pointer hover:bg-neutral-800"
-              onClick={() => {
-                setIsImportBtnClicked(true);
-              }}
-            >
-              <Download />
-              Import Wallet
-            </Button>
-            <Button
-              className="cursor-pointer hover:bg-neutral-800"
-              onClick={generateWalletFunc}
-            >
-              <Plus />
-              Generate Wallet
-            </Button>
+      );
+
+    case "private-key":
+      return (
+        <div>
+          <ArrowLeft
+            className="w-8 mt-4 ml-4 text-neutral-500 cursor-pointer"
+            onClick={onBackButtonClick}
+          />
+          <div className="m-4">
+            <ImportPrivateKey />
           </div>
-        ) : (
-          <div className="flex flex-col gap-4 w-full">
-            <span className="text-center text-gray-200">Import Wallet</span>
-            <div className="w-full font-medium">
-              <Button
-                className="bg-blue-500/20 text-blue-500 cursor-pointer hover:bg-blue-500/10"
-                onClick={onPasteBtnClick}
-              >
-                <Copy />
-                Paste
-              </Button>
-            </div>
-            <div className="grid grid-cols-3 gap-2">
-              {recoveryPhrase.map((text, i) => {
-                return (
-                  <Input
-                    key={i}
-                    className="outline-0 border border-neutral-800"
-                    value={text}
-                    placeholder={`${i + 1}`}
-                    onChange={(e) => onInputValueChange(i, e.target.value)}
-                  />
-                );
-              })}
-            </div>
-            <Button
-              className="cursor-pointer hover:bg-neutral-800"
-              disabled={recoveryPhrase.findIndex((text) => text === "") !== -1}
-              onClick={importWalletFunc}
-            >
-              <Plus />
-              Import
-            </Button>
-          </div>
-        )}
-      </div>
-    </div>
-  );
+        </div>
+      );
+
+    case "home":
+    default:
+      return (
+        <div>
+          <ArrowLeft
+            className="w-8 mt-4 ml-4 text-neutral-500 cursor-pointer"
+            onClick={onBackButtonClick}
+          />
+          <Home setPage={setPage} />
+        </div>
+      );
+  }
 }
