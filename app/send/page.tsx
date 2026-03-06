@@ -1,26 +1,67 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { ArrowLeft } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useEffectEvent, useState } from "react";
 import { Wallet } from "../home/page";
 import { useRouter } from "next/navigation";
+import { AddressInput } from "./addressInput";
+import ApiManager from "@/api";
+import { cn } from "@/lib/utils";
+import SolanaIcon from "./solIcon";
 
 export default function Page() {
   const router = useRouter();
 
   const [isNextBtnClicked, setIsNextBtnClicked] = useState(false);
+  const [address, setAddress] = useState("");
+  const [isValid, setIsValid] = useState<boolean | null>(null);
+  const [amount, setAmount] = useState<string>("");
   const [walletData, setWalletData] = useState<Wallet[]>([]);
+  const [selectedWallet, setSelectedWallet] = useState<Wallet | null>(null);
+  const [balance, setBalance] = useState(0);
+  const [solPriceUSD, setSolPriceUSD] = useState(0);
 
   useEffect(() => {
     const walletData = localStorage.getItem("wallet-data");
+    const selectedWallet = localStorage.getItem("selected-wallet");
     if (!walletData) {
       router.push("/import-or-generate-wallet");
     } else {
       setWalletData(JSON.parse(walletData));
+      setSelectedWallet(JSON.parse(selectedWallet || walletData[0]));
     }
+
+    const getSolPriceUSD = async () => {
+      const price = await ApiManager.getSolPriceUSD();
+      setSolPriceUSD(price);
+    };
+
+    getSolPriceUSD();
   }, []);
+
+  useEffect(() => {
+    if (address === "") {
+      setIsValid(null);
+      return;
+    }
+    const isValidAddress = ApiManager.validatePublicKey(address);
+    setIsValid(isValidAddress);
+  }, [address]);
+
+  useEffect(() => {
+    if (!selectedWallet) return;
+    const fetchBalance = async () => {
+      const balance = await ApiManager.getWalletBalance(
+        selectedWallet?.publicKey,
+      );
+      if (balance) {
+        setBalance(balance);
+      }
+    };
+
+    fetchBalance();
+  }, [selectedWallet]);
 
   const onBackButtonClick = () => {
     if (isNextBtnClicked) {
@@ -28,6 +69,17 @@ export default function Page() {
     } else {
       history.back();
     }
+  };
+
+  const sendSolana = () => {
+    const from = selectedWallet;
+
+    ApiManager.send(
+      from?.publicKey || "",
+      from?.privateKey || "",
+      address,
+      Number(amount),
+    );
   };
 
   return (
@@ -40,89 +92,48 @@ export default function Page() {
         Send
       </div>
       <div className="mt-4">
-        <Input
-          className="outline-0 border border-neutral-800 bg-neutral-900 mb-3"
-          placeholder="Enter address"
-        />
-        <span className="text-xs font-medium text-gray-400">
-          Your addresses
-        </span>
-        <div>
-          {walletData?.map((wallet) => {
-            return (
-              <div className="flex justify-between items-center  cursor-pointer hover:bg-neutral-900 rounded-md p-2">
-                <div className="flex gap-2 items-center">
-                  <svg
-                    viewBox="0 0 36 36"
-                    width="36"
-                    height="36"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <defs>
-                      <linearGradient
-                        x1="90.737%"
-                        y1="34.776%"
-                        x2="35.509%"
-                        y2="55.415%"
-                        id="sol-a"
-                      >
-                        <stop stop-color="#00FFA3" offset="0%" />
-                        <stop stop-color="#DC1FFF" offset="100%" />
-                      </linearGradient>
-                      <linearGradient
-                        x1="66.588%"
-                        y1="43.8%"
-                        x2="11.36%"
-                        y2="64.439%"
-                        id="sol-b"
-                      >
-                        <stop stop-color="#00FFA3" offset="0%" />
-                        <stop stop-color="#DC1FFF" offset="100%" />
-                      </linearGradient>
-                      <linearGradient
-                        x1="78.586%"
-                        y1="39.317%"
-                        x2="23.358%"
-                        y2="59.956%"
-                        id="sol-c"
-                      >
-                        <stop stop-color="#00FFA3" offset="0%" />
-                        <stop stop-color="#DC1FFF" offset="100%" />
-                      </linearGradient>
-                    </defs>
-                    <g fill="none" fill-rule="nonzero">
-                      <circle fill="#181E33" cx="18" cy="18" r="18" />
-                      <path
-                        d="M3.9 14.355a.785.785 0 0 1 .554-.23h19.153c.35 0 .525.423.277.67l-3.783 3.784a.785.785 0 0 1-.555.23H.393a.392.392 0 0 1-.277-.67l3.783-3.784z"
-                        fill="url(#sol-a)"
-                        transform="translate(6 9)"
-                      />
-                      <path
-                        d="M3.9.23c.15-.146.35-.23.554-.23h19.153c.35 0 .525.422.277.67l-3.783 3.783a.785.785 0 0 1-.555.23H.393a.392.392 0 0 1-.277-.67L3.899.229z"
-                        fill="url(#sol-b)"
-                        transform="translate(6 9)"
-                      />
-                      <path
-                        d="M20.1 7.247a.785.785 0 0 0-.554-.23H.393a.392.392 0 0 0-.277.67l3.783 3.784c.145.145.344.23.555.23h19.153c.35 0 .525-.423.277-.67l-3.783-3.784z"
-                        fill="url(#sol-c)"
-                        transform="translate(6 9)"
-                      />
-                    </g>
-                  </svg>
-                  <span className="font-medium">Wallet {wallet.index}</span>
-                </div>
-                <span className="max-w-24 text-sm truncate text-gray-400">
-                  {wallet.publicKey}
-                </span>
-              </div>
-            );
+        <AddressInput
+          wallets={walletData.filter((data) => {
+            data.publicKey !== selectedWallet?.publicKey;
           })}
+          value={address}
+          isValid={isValid}
+          onChange={setAddress}
+        />
+      </div>
+      <div
+        className="w-full flex flex-col items-center justify-center text-center"
+        style={{ height: "calc(100% - 11rem)" }}
+      >
+        <div className="flex gap-2 items-center">
+          <SolanaIcon />
+          <div className="text-gray-500 font-medium">SOL</div>
         </div>
+        <input
+          value={amount}
+          onChange={(e) => setAmount(e.target.value)}
+          className={cn(
+            "border-none text-center  bg-transparent outline-0 ring-0 text-5xl font-semibold w-[1ch] [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none",
+          )}
+          style={{ width: `${(amount || "0").length}ch` }}
+          type="number"
+          min="0"
+          placeholder="0"
+        />
+        <div className="text-gray-500 font-medium">
+          $ {solPriceUSD * Number(amount)}
+        </div>
+        <span className="text-gray-500 font-medium">Max: {balance} SOL</span>
       </div>
       <Button
-        disabled={true}
-        className="w-full bg-white text-black text-md font-semibold absolute bottom-4"
+        disabled={
+          !address.trim() ||
+          !isValid ||
+          !(!!amount && Number(amount) > 0 && Number(amount) < balance)
+        }
+        className="w-full bg-white text-black text-md font-semibold absolute bottom-4 cursor-pointer"
         style={{ width: "calc(100% - 2rem)" }}
+        onClick={sendSolana}
       >
         Next
       </Button>

@@ -10,7 +10,7 @@ import {
   ArrowRightLeft,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import ApiManager from "@/api/getWalletBalance";
+import ApiManager from "@/api";
 import WalletDropdown from "@/components/walletDropdown";
 import DisplayTokens from "@/components/displayTokens";
 

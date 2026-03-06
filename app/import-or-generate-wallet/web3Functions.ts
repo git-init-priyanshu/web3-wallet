@@ -3,17 +3,11 @@ import { generateMnemonic, mnemonicToSeedSync, validateMnemonic } from "bip39";
 import bs58 from "bs58";
 import { derivePath } from "ed25519-hd-key";
 import { Keypair } from "@solana/web3.js";
-import ApiManager from "@/api/getWalletBalance";
+import ApiManager from "@/api";
 
 const getBalance = async (publicKey: string) => {
-  const balanceResponse = await ApiManager.getWalletBalance(publicKey);
-  const balance = balanceResponse.data.result.value * 10 ** -9;
-
-  const usdPriceResponse = await ApiManager.getSolPriceUSD();
-  console.log(usdPriceResponse);
-  const usdPrice =
-    usdPriceResponse.data["So11111111111111111111111111111111111111112"]
-      .usdPrice;
+  const balance = (await ApiManager.getWalletBalance(publicKey)) || 0;
+  const usdPrice = await ApiManager.getSolPriceUSD();
 
   return [balance, usdPrice];
 };
